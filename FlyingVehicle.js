@@ -36,7 +36,7 @@ function FlyingVehicle(configuration)
 	this.momentum = new THREE.Vector3(0.0,0.0,0.0) ;
 	
 	this.turn = false ;
-	
+
 	this.weight = function()
 	{
 		return this.mass * Physics.G ;
