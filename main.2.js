@@ -7,7 +7,7 @@ requirejs(['ModulesLoaderV2.js'], function()
 		{ 
 			// Level 0 includes
 			ModulesLoader.requireModules(["threejs/three.min.js"]) ;
-			ModulesLoader.requireModules([ "myJS/ThreeRenderingEnv.js", 
+			ModulesLoader.requireModules([ "myJS/ThreeRenderingEnv.js",
 			                              "myJS/ThreeLightingEnv.js", 
 			                              "myJS/ThreeLoadingEnv.js",
                                           "lib/RenderManager.js",
@@ -18,7 +18,14 @@ requirejs(['ModulesLoaderV2.js'], function()
 		}
 ) ;
 
+function removeEntity(scene, name) {
+    var selectedObject = scene.getObjectByName(name);
+    scene.remove( selectedObject );
+    animate();
+}
+
 function start(){
+
 	//	----------------------------------------------------------------------------
 	//	MAR 2014 - nav test
 	//	author(s) : Cozot, R. and Lamarche, F.
@@ -56,11 +63,12 @@ function start(){
 	//	Loading env
 	var Loader = new ThreeLoadingEnv();
 
+
+
 	//	Meshes
 	Loader.loadMesh('assets','border_Zup_02','obj',	RC.scene,'border',	-340,-340,0,'front');
 	Loader.loadMesh('assets','ground_Zup_03','obj',	RC.scene,'ground',	-340,-340,0,'front');
 	Loader.loadMesh('assets','circuit_Zup_02','obj',RC.scene,'circuit',	-340,-340,0,'front');
-	//Loader.loadMesh('assets','tree_Zup_02','obj',	RC.scene,'trees',	-340,-340,0,'double');
 	Loader.loadMesh('assets','arrivee_Zup_01','obj',	RC.scene,'decors',	-340,-340,0,'front');
 		
 	//	Car
@@ -236,5 +244,38 @@ function start(){
 		RC.renderer.render(RC.scene, RC.camera);
 	};
 
-	render(); 
+
+    var FizzyText = function() {
+        this.Title = 'Welcome to Super Car';
+        this.Speed = 0.8;
+        this.Trees = false;
+        this.Reset = function() {
+            // NAV
+            NAV.move(CARx, CARy, 150,10) ;
+            // car0
+            car0.position.set(NAV.x, NAV.y, NAV.z) ;
+            // Updates the vehicle
+            vehicle.position.x = NAV.x ;
+            vehicle.position.y = NAV.Y ;
+        }
+    };
+
+    var text = new FizzyText();
+    var gui = new dat.GUI();
+
+    gui.add(text, 'Title');
+    gui.add(text, 'Speed', -5, 5);
+    gui.add(text, 'Reset');
+    gui.add(text, 'Trees').onChange(
+        function(value) {
+            console.log("Trees changed: ", value);
+            if (value) {
+                Loader.loadMesh('assets', 'tree_Zup_02', 'obj', RC.scene, 'trees', -340, -340, 0, 'double');
+            } else {
+                removeEntity(RC.scene, 'trees');
+            }
+        }
+    )
+
+	render();
 }
