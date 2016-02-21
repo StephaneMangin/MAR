@@ -83,7 +83,7 @@ function start()
 	var carGeometry = Loader.load({filename: 'assets/car_Zup_01.obj', node: carRotationZ, name: 'car3'}) ;
 	carGeometry.position.z= +0.25 ;
 	// attach the scene camera to car
-//	carGeometry.add(renderingEnvironment.camera) ;
+//	car.add(renderingEnvironment.camera) ;
 //	renderingEnvironment.camera.position.x = 0.0 ;
 //	renderingEnvironment.camera.position.z = 10.0 ;
 //	renderingEnvironment.camera.position.y = -25.0 ;

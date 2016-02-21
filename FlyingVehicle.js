@@ -41,7 +41,7 @@ function FlyingVehicle(configuration)
 	{
 		return this.mass * Physics.G ;
 	} ;
-	
+
 	/**
 	 *  Resets aplied forces and momentum
 	 */

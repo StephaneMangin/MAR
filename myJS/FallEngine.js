@@ -85,8 +85,8 @@ function FallEngine() {
         },
         snow: {
             positionStyle: Type.CUBE,
-            positionBase: new THREE.Vector3(0, 200, 0),
-            positionSpread: new THREE.Vector3(500, 0, 500),
+            positionBase: new THREE.Vector3(0, 0, 0),
+            positionSpread: new THREE.Vector3(500, 500, 500),
 
             velocityStyle: Type.CUBE,
             velocityBase: new THREE.Vector3(0, -60, 0),
@@ -100,36 +100,62 @@ function FallEngine() {
 
             particleTexture: THREE.ImageUtils.loadTexture('images/snowflake.png'),
 
-            sizeTween: new Tween([0, 0.25], [1, 10]),
+            sizeTween: new Tween([0, 0.25], [0.5, 2]),
             colorBase: new THREE.Vector3(0.66, 1.0, 0.9), // H,S,L
             opacityTween: new Tween([2, 3], [0.8, 0]),
 
-            particlesPerSecond: 200,
+            particlesPerSecond: 4000,
             particleDeathAge: 4.0,
-            emitterDeathAge: 60
+            emitterDeathAge: 3600
         },
         rain: {
             positionStyle: Type.CUBE,
-            positionBase: new THREE.Vector3(0, 200, 0),
-            positionSpread: new THREE.Vector3(600, 0, 600),
+            positionBase: new THREE.Vector3(0, 0, 0),
+            positionSpread: new THREE.Vector3(500, 500, 500),
 
             velocityStyle: Type.CUBE,
             velocityBase: new THREE.Vector3(0, -400, 0),
-            velocitySpread: new THREE.Vector3(10, 50, 10),
+            velocitySpread: new THREE.Vector3(20, 5, 10),
             accelerationBase: new THREE.Vector3(0, -10, 0),
 
             particleTexture: THREE.ImageUtils.loadTexture('images/raindrop2flip.png'),
 
-            sizeBase: 8.0,
-            sizeSpread: 4.0,
+            sizeBase: 1.0,
+            sizeSpread: 5,
             colorBase: new THREE.Vector3(0.66, 1.0, 0.7), // H,S,L
             colorSpread: new THREE.Vector3(0.00, 0.0, 0.2),
             opacityBase: 0.6,
 
-            particlesPerSecond: 1000,
+            particlesPerSecond: 4000,
             particleDeathAge: 1.0,
-            emitterDeathAge: 60
-        }
+            emitterDeathAge: 3600
+        },
+        smoke :
+        {
+            positionStyle    : Type.CUBE,
+            positionBase     : new THREE.Vector3( 0, 0, 0 ),
+            positionSpread   : new THREE.Vector3( 10, 0, 10 ),
+
+            velocityStyle    : Type.CUBE,
+            velocityBase     : new THREE.Vector3( 0, 150, 0 ),
+            velocitySpread   : new THREE.Vector3( 80, 50, 80 ),
+            accelerationBase : new THREE.Vector3( 0,-10,0 ),
+
+            particleTexture : THREE.ImageUtils.loadTexture( 'images/smokeparticle.png'),
+
+            angleBase               : 0,
+            angleSpread             : 720,
+            angleVelocityBase       : 0,
+            angleVelocitySpread     : 720,
+
+            sizeTween    : new Tween( [0, 1], [32, 128] ),
+            opacityTween : new Tween( [0.8, 2], [0.5, 0] ),
+            colorTween   : new Tween( [0.4, 1], [ new THREE.Vector3(0,0,0.2), new THREE.Vector3(0, 0, 0.5) ] ),
+
+            particlesPerSecond : 200,
+            particleDeathAge   : 2.0,
+            emitterDeathAge    : 60
+        },
 
     }
 
@@ -141,12 +167,14 @@ function FallEngine() {
      * Start the rain
      *
      */
-    this.start = function () {
+    this.start = function (scene) {
         if (engine == undefined) {
             engine = new ParticleEngine();
             engine.setValues(types.rain);
         }
-        engine.initialize();
+        var particleMesh = engine.initialize();
+        particleMesh.rotateX(Math.PI/2);
+        scene.add(particleMesh);
         isActive = true;
     }
 
@@ -163,7 +191,7 @@ function FallEngine() {
      */
     this.update = function (dt, position) {
         if (isActive) {
-            engine.positionBase = position;
+            //engine.positionBase = position;
             engine.update(dt);
         }
     }
