@@ -24,7 +24,6 @@ requirejs(['ModulesLoaderV2.js'], function () {
     }
 );
 
-var rendererId = undefined;
 
 //	----------------------------------------------------------------------------
 //	MAR 2014 - nav test
@@ -46,8 +45,9 @@ var CARtheta = 0;
 var dt = 1.0 / 60;
 var dx = 1.0;
 var carMass = 50;
+var cameratype = 'follow';
 
-var vehicle, scene, RC, Lights, Loader, car0, car1, car2, car3, fallEngine, gui = undefined;
+var vehicle, scene, RC, Lights, Loader, carPosition, carRotationZ, carGeometry, carFloorSlope, fallEngine, gui = undefined;
 
 
 function removeEntity(scene, name) {
@@ -68,31 +68,45 @@ function initObjects() {
 
     //	Car
     // car Translation
-    car0 = new THREE.Object3D();
-    car0.name = 'car0';
-    car0.position = new THREE.Vector3(CARx, CARy, CARz);
-    RC.addToScene(car0);
+    carPosition = new THREE.Object3D();
+    carPosition.name = 'car0';
+    RC.addToScene(carPosition);
     // initial POS
+    carPosition.position.x = CARx;
+    carPosition.position.y = CARy;
+    carPosition.position.z = CARz;
     // car Rotation floor slope follow
-    car1 = new THREE.Object3D();
-    car1.name = 'car1';
-    car0.add(car1);
+    carFloorSlope = new THREE.Object3D();
+    carFloorSlope.name = 'car1';
+    carPosition.add(carFloorSlope);
     // car vertical rotation
-    car2 = new THREE.Object3D();
-    car2.name = 'car2';
-    car1.add(car2);
-    car2.rotation.z = CARtheta;
+    carRotationZ = new THREE.Object3D();
+    carRotationZ.name = 'car2';
+    carFloorSlope.add(carRotationZ);
+    carRotationZ.rotation.z = CARtheta ;
     // the car itself
     // simple method to load an object
-    car3 = Loader.load({filename: 'assets/car_Zup_01.obj', node: car2, name: 'car3'});
-    car3.position.z = +0.25;
-    // attach the scene camera to car
-    car3.add(RC.camera);
-    RC.camera.position.x = 0.0;
-    RC.camera.position.z = 10.0;
-    RC.camera.position.y = -25.0;
-    RC.camera.rotation.x = 85.0 * 3.14159 / 180.0;
+    carGeometry = Loader.load({filename: 'assets/car_Zup_01.obj', node: carRotationZ, name: 'car3'}) ;
+    carGeometry.position.z= +0.25 ;
 
+}
+
+function setCamera(type) {
+    cameratype = type;
+    if (type == 'up') {
+        RC.camera.position.x = 0.0 ;
+        RC.camera.position.y = 0.0 ;
+        RC.camera.position.z = 50 ;
+        RC.camera.rotation.x = 3.14159 / 180.0;
+        carPosition.add(RC.camera);
+    } else if (type == 'follow') {
+        RC.camera.position.x = 0.0;
+        RC.camera.position.z = 10.0;
+        RC.camera.position.y = -25.0;
+        RC.camera.rotation.x = 85.0 * 3.14159 / 180.0;
+        // attach the scene camera to car
+        carGeometry.add(RC.camera);
+    }
 }
 
 //	window resize
@@ -101,21 +115,14 @@ function onWindowResize() {
 }
 
 function reset() {
+    // Delete objects
     delete vehicle, scene, RC, Lights, Loader, car0, car1, car2, car3, fallEngine, gui;
+    // Delete the canva added by the renderer
     var canvas = document.getElementsByTagName('canvas')
     for(var i = canvas.length - 1; 0 <= i; i--)
         if(canvas[i] && canvas[i].parentElement)
             canvas[i].parentElement.removeChild(canvas[i]);
-    var Node1 = document.getElementById("game");
-    var len = Node1.childNodes.length;
-
-    for(var i = 0; i < len; i++)
-    {
-        if(Node1.childNodes[i].id == 'child')
-        {
-            Node1.removeChild(Node1.childNodes[i]);
-        }
-    }
+    // And then reinit the scene
     initLand();
     initObjects();
     render();
@@ -125,9 +132,13 @@ function render() {
     renderedId = requestAnimationFrame(render);
     handleKeys();
     // Vehicle stabilization
+
+    if (cameratype == 'up') {
+        vehicle.goUp(vehicle.weight() / 4.0, vehicle.weight() / 4.0, vehicle.weight() / 4.0, vehicle.weight() / 4.0);
+        vehicle.stopAngularSpeedsXY();
+    }
     vehicle.stabilizeSkid(50);
     vehicle.stabilizeTurn(1000);
-    vehicle.update(dt);
     var oldPosition = vehicle.position.clone();
     vehicle.update(dt);
     var newPosition = vehicle.position.clone();
@@ -135,17 +146,21 @@ function render() {
     // NAV
     NAV.move(newPosition.x, newPosition.y, 150, 10);
     // car0
-    car0.position.set(NAV.x, NAV.y, NAV.z);
+    carPosition.position.set(NAV.x, NAV.y, NAV.z);
     // Updates the vehicle
-    vehicle.position.set(NAV.x, NAV.y, NAV.z);
+    vehicle.position.x = NAV.x;
+    vehicle.position.y = NAV.y;
     // Updates car1
-    car1.matrixAutoUpdate = false;
-    car1.matrix.copy(NAV.localMatrix(CARx, CARy));
+    carFloorSlope.matrixAutoUpdate = false;
+    carFloorSlope.matrix.copy(NAV.localMatrix(CARx, CARy));
     // Updates car2
-    car2.rotation.z = vehicle.angles.z - Math.PI / 2.0;
-    // Rendering
+    carRotationZ.rotation.z = vehicle.angles.z - Math.PI / 2.0;
+    if (cameratype == 'up') {
+        RC.camera.position.z = 50+vehicle.speed.length() ;
+    }
+    // Renderingx
     RC.renderer.render(RC.scene, RC.camera);
-    fallEngine.update(0.01 * 0.5, vehicle.position);
+    fallEngine.update(0.01 * 0.5, vehicle.position.multiplyScalar(5));
 
 };
 
@@ -155,6 +170,7 @@ function initGUI() {
         this.Inertia = dt * 100;
         this.Mass = carMass;
         this.Trees = false;
+        this.CameraUp = false;
         this.Particules = [];
         this.Reset = function () {
             reset();
@@ -168,6 +184,16 @@ function initGUI() {
     var gameControls = gui.addFolder('Game controls');
 
     gameControls.add(text, 'Reset');
+    gameControls.add(text, 'CameraUp').onChange(
+        function (value) {
+            console.log("Camera up: ", value);
+            if (value) {
+                setCamera('up');
+            } else {
+                setCamera('follow');
+            }
+        }
+    );
     var vehicleControls = gui.addFolder('Vehicle controls');
     vehicleControls.add(text, 'Mass', 0, 500).onChange(function (value) {
         console.log("Mass changed: ", value);
@@ -296,7 +322,6 @@ function initLand()
     NAV.setPos(CARx, CARy, CARz);
     NAV.initActive();
 
-    fallEngine = new FallEngine();
 }
 
 function start() {
@@ -316,5 +341,7 @@ function start() {
     initLand();
     initObjects();
     initGUI();
+    setCamera('follow');
+    fallEngine = new FallEngine();
     render();
 }
