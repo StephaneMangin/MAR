@@ -155,6 +155,9 @@ function start()
         if (currentlyPressedKeys[65]) { // (A) Up {
             vehicle.goUp(1200, 1200, 1200, 1200) ;
         }
+        if (currentlyPressedKeys[87]) { // (W) Down {
+            vehicle.goUp(-1200, -1200, -1200, -1200) ;
+        }
 	}
 
 	//	window resize
@@ -164,22 +167,27 @@ function start()
 	}
 
 	function render() {
+        //console.log("momentum =>" + vehicle.momentum.x + ", " + vehicle.momentum.y + ", " + vehicle.momentum.z);
+        //console.log("speed =>" + vehicle.speed.x + ", " + vehicle.speed.y + ", " + vehicle.speed.z);
+        //console.log("angularSpeed =>" + vehicle.angularSpeed.x + ", " + vehicle.angularSpeed.y + ", " + vehicle.angularSpeed.z);
 		requestAnimationFrame( render );
 		handleKeys();
 		// Vehicle stabilization
-		vehicle.stabilizeSkid(50) ;
+		vehicle.stabilizeSkid(50);
 		vehicle.stabilizeTurn(1000) ;
 		var oldPosition = vehicle.position.clone() ;
 		vehicle.update(1.0/60) ;
 		var newPosition = vehicle.position.clone() ;
 		newPosition.sub(oldPosition);
         // NAV
-        NAV.move(newPosition.x, newPosition.y, newPosition.z) ;
+        NAV.move(newPosition.x, newPosition.y, 150, 20) ;
+        helico.setPosition(NAV.x, NAV.y, NAV.z);
+        // Updates the vehicle
+        vehicle.position.x = NAV.x ;
+        vehicle.position.y = NAV.y ;
 		// Updates the helico
-		helico.setPosition(NAV.x, NAV.y, NAV.z);
-		//helico.setInclinaison(vehicle.angles.y-Math.PI*2);
-        //helico.setDirectionalTurbineRotation(vehicle.speed.y % Math.PI);
-        //helico.setMainTurbineRotationSpeed(vehicle.speed);
+        //helico.setMatrix(NAV.localMatrix(CARx,CARy));
+        helico.update(vehicle, dt)
 		// Rendering
 		renderingEnvironment.renderer.render(renderingEnvironment.scene, renderingEnvironment.camera);
 	};

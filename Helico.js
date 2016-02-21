@@ -235,7 +235,7 @@ function Helico(name)
      * @param speed
      */
     this.setMainTurbineRotationSpeed = function(speed) {
-        this.axeCentral.rotation.y += speed.z.length;
+        this.axeCentral.rotation.y += - speed.x * 1.0E-3;
     }
 
     /**
@@ -243,41 +243,73 @@ function Helico(name)
      *
      * @param value
      */
-    this.setDirectionalTurbineRotation = function(value) {
-        this.axeGauche.rotation.y += value;
-        this.axeDroit.rotation.y += value;
-    }
+    this.setDirectionalTurbineRotationSpeed = function(speed) {
 
-    /**
-     * Give a value to set the secondary turbines angular position
-     *
-     * @param value
-     */
-    this.setDirectionalTurbineAngularPosition = function(value) {
-        this.turbineGauche.rotation.x += value;
-        this.turbineDroite.rotation.x += value;
+        if (speed.y >= 0) {
+            var turbineAngularValue = -4.5 - speed.y / 50;
+            var secondaryTurbineRotationValue = speed.y / 10;
+        } else {
+            var turbineAngularValue = -4.5 + speed.y / 50;
+            var secondaryTurbineRotationValue = - speed.y / 10;
+        }
+        // update angular position of each turbine
+        if (turbineAngularValue >= -6.5 && turbineAngularValue <= -4.5) {
+            this.turbineGauche.rotation.x = turbineAngularValue;
+            this.turbineDroite.rotation.x = turbineAngularValue;
+        }
+        this.axeGauche.rotation.y = secondaryTurbineRotationValue;
+        this.axeDroit.rotation.y = secondaryTurbineRotationValue;
     }
 
     /**
      * Helico Rotation setter helper
      *
-     * @param value
+     * @param value in degree
      */
-    this.setInclinaison = function(value) {
-        this.helico.rotation.y += value;
+    this.setInclinaison = function(speed) {
+        this.helico.rotation.x -= speed.y / 5000;
+        this.helico.rotation.y -= speed.x / 5000;
 	}
 
+    /**
+     * Helico Position helper setter
+     *
+     * @param x
+     * @param y
+     * @param z
+     */
+    this.setPosition = function(x, y, z) {
+        this.helico.position.x = x
+        this.helico.position.y = y;
+        this.helico.position.z = z;
+    }
 
-     /**
-      * Helico Position helper setter
-      *
-      * @param x
-      * @param y
-      * @param z
-      */
-     this.setPosition = function(x, y, z) {
-         this.helico.position.x = x
-         this.helico.position.y = y;
-         this.helico.position.z = z;
-	}
+    /**
+     * Helico matrix helper setter
+     *
+     * @param x
+     * @param y
+     * @param z
+     */
+    this.setMatrix = function(matrix) {
+        this.helico.matrixAutoUpdate = false;
+        this.helico.matrix.copy(matrix);
+    }
+
+    this.update = function(vehicle, dt) {
+        var speed = vehicle.speed;
+        var momentum = vehicle.momentum;
+        var position = vehicle.position;
+        console.log("speed => ", speed.x, speed.y, speed.z);
+        console.log("position => " + position.x, position.y, position.z);
+        console.log("momentum => " + momentum.x, momentum.y, momentum.z);
+        //console.log("turbineAngularValue => " + turbineAngularValue);
+        //console.log("mainTurbineRotationValue => " + mainTurbineRotationValue);
+        //console.log("secondaryTurbineRotationValue => " + secondaryTurbineRotationValue);
+
+        this.helico.rotation.z = vehicle.angles.z-Math.PI/2.0 ;
+        this.setMainTurbineRotationSpeed(speed);
+        this.setDirectionalTurbineRotationSpeed(speed);
+        this.setInclinaison(speed);
+    }
 }
