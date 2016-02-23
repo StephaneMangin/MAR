@@ -36,6 +36,20 @@ requirejs(['ModulesLoaderV2.js'], function () {
 //	----------------------------------------------------------------------------
 //	keyPressed
 var currentlyPressedKeys = {};
+var playerMode = 1;
+var timerStarted = false;
+var welcomeScreen = true;
+
+
+var canvasWidth = 1366;
+var canvasHeight = 768;
+
+var hasGP = false;
+var repGP;
+var realisateur;
+var mod_realisation = 0;
+
+var time = 0;
 
 // List of collidable objects NO SOLUTION FOR NOW
 var collidableMeshList = [];
@@ -69,6 +83,11 @@ var lifePoint = 100.0;
 function removeEntity(scene, name) {
     var selectedObject = scene.getObjectByName(name);
     scene.remove(selectedObject);
+}
+
+// Gamepad manadgment
+function canGame() {
+    return "getGamepads" in navigator;
 }
 
 /**
@@ -105,7 +124,7 @@ function initObjects() {
     carRotationZ.rotation.z = CARtheta;
     // the car itself
     // simple method to load an object
-    car = Loader.load({filename: 'assets/car_Zup_01.obj', node: carRotationZ, name: 'car3'});
+    car = Loader.load({filename: 'assets/car_Zup_02.obj', node: carRotationZ, name: 'car3'});
     car.position.z = +0.25;
     var carGeometry = new THREE.SphereGeometry(5);
     wireMaterial = new THREE.MeshBasicMaterial({
@@ -158,6 +177,7 @@ function onWindowResize() {
  *
  */
 function restart() {
+    toggleWelcomeScreen();
     // Delete the canva added by the renderer
     var canvas = document.getElementsByTagName('canvas')
     for (var i = canvas.length - 1; 0 <= i; i--)
@@ -187,6 +207,7 @@ function restart() {
  *
  */
 function render() {
+    RC.renderer.autoClear = false;
     requestAnimationFrame(render);
     handleKeys();
     // Vehicle stabilization
@@ -256,12 +277,16 @@ function render() {
                 console.log("BURNED !!!!!!!!!!!!")
                 burned = true;
         } else {
-            // car0
-            carPosition.position.set(NAV.x, NAV.y, NAV.z);
-            MovingCar.position.set(NAV.x, NAV.y, NAV.z);
-            // Updates the vehicle
+            // Updates the vehicles
             vehicle.position.x = NAV.x;
             vehicle.position.y = NAV.y;
+            if (newPosition.z < NAV.z) {
+                //console.log("OUT ",newPosition.z, " FROM ", NAV.z )
+                vehicle.position.z = NAV.z;
+                newPosition.z = NAV.z;
+            }
+            carPosition.position.set(NAV.x, NAV.y, newPosition.z);
+            MovingCar.position.set(NAV.x, NAV.y, newPosition.z);
             // Updates car1
             carFloorSlope.matrixAutoUpdate = false;
             carFloorSlope.matrix.copy(NAV.localMatrix(CARx, CARy));
@@ -273,6 +298,7 @@ function render() {
         }
 
     }
+    updateTiming();
     // Rendering
     RC.renderer.render(RC.scene, RC.camera);
     weitherEngine.update(dt, vehicle.position.multiplyScalar(10));
@@ -362,6 +388,7 @@ function initGUI() {
 //	callback functions
 //	---------------------------------------------------------------------------
 function handleKeyDown(event) {
+    console.log(event.keyCode);
     currentlyPressedKeys[event.keyCode] = true;
 }
 function handleKeyUp(event) {
@@ -391,6 +418,10 @@ function handleKeys() {
     {
         vehicle.brake(100);
     }
+    if (currentlyPressedKeys[27]) // (Esc) Welcome screen
+    {
+        toggleWelcomeScreen();
+    }
 }
 
 /**
@@ -403,10 +434,14 @@ function initLand() {
     RC = new ThreeRenderingEnv();
     // Keep scene inside the global namespace (to allow particles engine to use it ?! but WTF)
     scene = RC.scene;
-    scene.
+    var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 5, 500000 );
+    camera.up = new THREE.Vector3(0,0,1);
+    camera.position.x = -260;
+    camera.position.y = 250;
+    camera.position.z = 50;
 
-        //	lighting env
-        Lights = new ThreeLightingEnv('rembrandt', 'neutral', 'spot', RC, 5000);
+    //	lighting env
+    Lights = new ThreeLightingEnv('rembrandt', 'neutral', 'spot', RC, 5000);
 
     //	Loading env
     Loader = new ThreeLoadingEnv();
@@ -503,11 +538,95 @@ function initLand() {
  return collidableMeshList;
  }*/
 
+function checkRealisation(){
+    if (currentlyPressedKeys[80]) // (Q)
+    {
+        mod_realisation = (mod_realisation+1)%4;
+    }
+}
+
+function view() {
+    if(NAV.findActive(NAV.x, NAV.y) == 0) {
+        camera.position.x = -260;
+        camera.position.y = 250;
+        camera.position.z = 50;
+    }
+    if(NAV.findActive(NAV.x, NAV.y) == 5) {
+        camera.position.x = 100;
+        camera.position.y = -100;
+        camera.position.z = 200;
+    }
+    if(NAV.findActive(NAV.x, NAV.y) == 11) {
+        camera.position.x = 260;
+        camera.position.y = -200;
+        camera.position.z = 120;
+    }
+    if(NAV.findActive(NAV.x, NAV.y) == 15) {
+        camera.position.x = 50;
+        camera.position.y = -20;
+        camera.position.z = 150;
+    }
+    if(NAV.findActive(NAV.x, NAV.y) == 20) {
+        camera.position.x = -30;
+        camera.position.y = -180;
+        camera.position.z = 120;
+    }
+    if(NAV.findActive(NAV.x, NAV.y) == 24) {
+        camera.position.x = -200;
+        camera.position.y = -300;
+        camera.position.z = 80;
+    }
+}
+
+function reportOnGamepad() {
+    var gp = navigator.getGamepads()[0];
+    if(gp.buttons[7].pressed){
+        vehicle.goFront(1200, 1200) ;
+    }
+    if(gp.buttons[6].pressed){
+        vehicle.brake(1000) ;
+    }
+    var axeLF = gp.axes[0];
+    if(axeLF < -0.5) {
+        vehicle.turnLeft(10000) ;
+    } else if(axeLF > 0.5) {
+        vehicle.turnRight(10000) ;
+    }
+
+}
+
 /**
  * Main start method called by the module loader
  *
  */
 function start() {
+    // Gamepad
+    if(canGame()) {
+
+        realisateur = window.setInterval(checkRealisation, 100);
+
+        $(window).on("gamepadconnected", function() {
+            hasGP = true;
+            noty({text: 'Gamepad connected !'});
+            console.log("connection event");
+            repGP = window.setInterval(reportOnGamepad,100);
+        });
+
+        $(window).on("gamepaddisconnected", function() {
+            console.log("disconnection event");
+            noty({text: prompt});
+            window.clearInterval(repGP);
+        });
+
+        //setup an interval for Chrome
+        var checkGP = window.setInterval(function() {
+            console.log('checkGP');
+            if(navigator.getGamepads()[0]) {
+                if(!hasGP) $(window).trigger("gamepadconnected");
+                window.clearInterval(checkGP);
+            }
+        }, 500);
+    }
 
     // DEBUG
     //NAV.debug();
@@ -522,8 +641,68 @@ function start() {
     document.onkeyup = handleKeyUp;
 
     // Initializes the menu
-    initGUI();
-
+    if (gui == undefined) {
+        initGUI();
+    }
     restart();
+}
 
+function renderRealisation() {
+    view();
+    camera.lookAt(carPosition.position);
+    switch(mod_realisation){
+        case 0:
+            RC.renderer.setViewport( 0, 0, 1*canvasWidth, 1*canvasHeight );
+            RC.renderer.render(RC.scene, RC.camera);
+            break;
+        case 1:
+            RC.renderer.setViewport( 0, 0, 1*canvasWidth, 1*canvasHeight );
+            RC.renderer.render(RC.scene, camera);
+            break;
+        case 2:
+            RC.renderer.setViewport( 0, 0, 0.5*canvasWidth, 1*canvasHeight );
+            // Rendering
+            RC.renderer.render(RC.scene, RC.camera);
+
+            RC.renderer.setViewport( 0.5*canvasWidth, 0, 0.5*canvasWidth, 1*canvasHeight );
+            RC.renderer.render(RC.scene, camera);
+            break;
+        case 3:
+            RC.renderer.setViewport( 0, 0, 0.5*canvasWidth, 0.5*canvasHeight );
+            // Rendering
+            RC.renderer.render(RC.scene, RC.camera);
+
+            RC.renderer.setViewport( 0.5*canvasWidth, 0.5*canvasHeight, 0.5*canvasWidth, 0.5*canvasHeight );
+            RC.renderer.render(RC.scene, camera);
+            break;
+        default:
+            console.log(mod_realisation);
+            console.log("Mode non traité");
+    }
+}
+
+function updateTiming(dt) {
+    if (timerStarted) {
+        delta = new Date().getTime() - time;
+        var date = new Date(null);
+        date.setMilliseconds(delta); // specify value for SECONDS here
+        $("#timing").text(date.toISOString().substr(11, 11))
+    } else {
+        time = new Date().getTime();
+    }
+}
+
+function toggleWelcomeScreen() {
+    if (welcomeScreen) {
+        $("#welcomeScreen").hide();
+    } else {
+        $("#welcomeScreen").show();
+    }
+    welcomeScreen = !welcomeScreen;
+}
+
+function setPlayerMode(num) {
+    playerMode = num;
+    timerStarted = true;
+    noty({text: 'To begin using your gamepad, connect it and press any button!'});
 }

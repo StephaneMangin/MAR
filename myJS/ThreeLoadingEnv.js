@@ -110,6 +110,7 @@ function ThreeLoadingEnv(){
 //					});
 //				break ;
 //			}
+			noty({text: name+' loaded', timeout: 1});
 			console.log( 'ThreeLoadingEnv.load:: '+name+':: '+'added !' );
 			// Adds the geometry to the parent node
 			parentNode.add(object.scene) ;
@@ -151,13 +152,15 @@ function ThreeLoadingEnv(){
 					break ;
 				}
 				// add to scene
-				scene.add(o);	
+				scene.add(o);
+				noty({text: name+' loaded', timeout: 1});
 				console.log( 'ThreeLoadingEnv.load:: '+name+':: '+'added !' );
 			},
 			function ( xhr ) { // on progress
 				if ( xhr.lengthComputable ) {
 					var percentComplete = xhr.loaded / xhr.total * 100;
 					var percent = Math.round(percentComplete, 2);
+
 					console.log( 'ThreeLoadingEnv.load:: '+name+':: '+percent + '% downloaded' );
 				}
 			},

@@ -16,7 +16,10 @@ function ThreeRenderingEnv(){
 	this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.01, 5000 );
 
 	// renderer
-	this.renderer = new THREE.WebGLRenderer();
+	this.renderer = new THREE.WebGLRenderer({
+		precision: "lowp",
+		devicePixelRatio:0.75,
+		antialias:false });
 	// default background color
 	this.renderer.setClearColor(0x404080, 1);
 	this.renderer.shadowMapEnabled = true;
