@@ -200,6 +200,7 @@ function ThreeLoadingEnv(){
 		);
 		var cube = new THREE.Mesh( new THREE.BoxGeometry( size, size, size), material );
 		cube.name = name;
+		cube.position.z = 500;
 		scene.add( cube );	
 	}
 }

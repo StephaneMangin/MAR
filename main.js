@@ -274,17 +274,17 @@ function render() {
         //    fireEngine.update(dt, vehicle.position);
         //}
         if (lifePoint <= 0) {
-                explosionEngine.start(vehicle);
-                explosionEngine.update(dt, vehicle.position);
-                console.log("BURNED !!!!!!!!!!!!")
-                burned = true;
+            explosionEngine.start(vehicle);
+            explosionEngine.update(dt, vehicle.position);
+            console.log("BURNED !!!!!!!!!!!!")
+            burned = true;
         } else {
             // Updates the vehicles
-        //if (burned || lifePoint <= 0) {
-        //       fireEngine.start(collidableCar);
-        //        console.log("BURNED !!!!!!!!!!!!")
-        //        burned = true;
-        //} else {
+            //if (burned || lifePoint <= 0) {
+            //       fireEngine.start(collidableCar);
+            //        console.log("BURNED !!!!!!!!!!!!")
+            //        burned = true;
+            //} else {
             // car0
             carPosition.position.set(NAV.x, NAV.y, NAV.z);
             collidableCar.position.set(NAV.x, NAV.y, NAV.z);
@@ -306,19 +306,19 @@ function render() {
             if (cameratype == 'up') {
                 RC.camera.position.z = 50 + vehicle.speed.length();
             }
-        //}
+            //}
 
+        }
+        updateTiming();
+        // Update all of the particles engines wrappers (check is done if started or not)
+        explosionEngine.update(dt, vehicle.speed);
+        fireEngine.update(dt, vehicle.speed);
+        smokeEngine.update(dt, vehicle.speed);
+        weitherEngine.update(dt, null);
+        // Rendering
+        RC.renderer.render(RC.scene, RC.camera);
     }
-    updateTiming();
-    // Update all of the particles engines wrappers (check is done if started or not)
-    explosionEngine.update(dt, vehicle.speed);
-    fireEngine.update(dt,  vehicle.speed);
-    smokeEngine.update(dt,  vehicle.speed);
-    weitherEngine.update(dt, null);
-    // Rendering
-    RC.renderer.render(RC.scene, RC.camera);
-
-};
+}
 
 /**
  * Initializes the menu
@@ -332,8 +332,8 @@ function initGUI() {
         this.Trees = false;
         this.CameraUp = false;
         this.Debug = false;
-        this.Environnement = ['Cloud', 'Montains'];
-        this.Weather = ['NONE', 'RAIN', 'SNOW'];
+        this.Sky = ['Sun', 'Clouds', 'Montains'];
+        this.Weather = {Shiny: 'NONE', Rainy: 'RAIN', Snowy: 'SNOW'};
         this.Reset = function () {
             restart();
             render();
@@ -351,7 +351,7 @@ function initGUI() {
         function (value) {
             console.log("Camera up: ", value);
             wireMaterial.visible = value;
-            collidableMeshList.forEach(function(border) {
+            collidableMeshList.forEach(function (border) {
                 if (border.hasOwnProperty('material')) {
                     border.material.color = 0x8888ff;
                     border.material.wireframe = true;
@@ -393,7 +393,7 @@ function initGUI() {
             }
         }
     );
-    mapControls.add(text, 'Weather', ['NONE', 'RAIN', 'SNOW']).onChange(
+    mapControls.add(text, 'Weather', {Shiny: 'NONE', Rainy: 'RAIN', Snowy: 'SNOW'}).onChange(
         function (value) {
             console.log("Weather changed: ", value);
             if (value != 'NONE') {
@@ -406,29 +406,34 @@ function initGUI() {
         }
     );
 
-    mapControls.add(text, 'Environnement', ['Clouds', 'Montains']).onChange(
+    mapControls.add(text, 'Sky', ['Sun', 'Clouds', 'Montains']).onChange(
         function (value) {
             console.log("Weather changed: ", value);
             removeEntity(scene, 'sky');
             if (value == 'Clouds') {
-                Loader.loadSkyBox('assets/maps/sky', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'jpg', RC.scene, 'sky', 4000);
+                Loader.loadSkyBox('assets/maps/clouds', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'jpg', RC.scene, 'sky', 4000);
             } else if (value == 'Montains') {
-                Loader.loadSkyBox('assets/maps/mountain', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'png', RC.scene, 'sky', 4000);
+                Loader.loadSkyBox('assets/maps/mountains', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'png', RC.scene, 'sky', 4000);
+            } else if (value == 'Sun') {
+                Loader.loadSkyBox('assets/maps/sun', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'jpg', RC.scene, 'sky', 4000);
             } else {
-                Loader.loadSkyBox('assets/maps/sky', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'jpg', RC.scene, 'sky', 4000);
+                Loader.loadSkyBox('assets/maps/clouds', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'jpg', RC.scene, 'sky', 4000);
             }
         }
     );
 }
+
 //	callback functions
 //	---------------------------------------------------------------------------
 function handleKeyDown(event) {
     console.log(event.keyCode);
     currentlyPressedKeys[event.keyCode] = true;
 }
+
 function handleKeyUp(event) {
     currentlyPressedKeys[event.keyCode] = false;
 }
+
 function handleKeys() {
     if (currentlyPressedKeys[67]) // (C) debug
     {
@@ -469,8 +474,8 @@ function initLand() {
     RC = new ThreeRenderingEnv();
     // Keep scene inside the global namespace (to allow particles engine to use it ?! but WTF)
     scene = RC.scene;
-    var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 5, 500000 );
-    camera.up = new THREE.Vector3(0,0,1);
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 5, 500000);
+    camera.up = new THREE.Vector3(0, 0, 1);
     camera.position.x = -260;
     camera.position.y = 250;
     camera.position.z = 50;
@@ -529,6 +534,7 @@ function initLand() {
     NAV.initActive();
 
 }
+
 /**
  * Constructs walls to make collision detection
  *
@@ -573,40 +579,40 @@ function initLand() {
  return collidableMeshList;
  }*/
 
-function checkRealisation(){
+function checkRealisation() {
     if (currentlyPressedKeys[80]) // (Q)
     {
-        mod_realisation = (mod_realisation+1)%4;
+        mod_realisation = (mod_realisation + 1) % 4;
     }
 }
 
 function view() {
-    if(NAV.findActive(NAV.x, NAV.y) == 0) {
+    if (NAV.findActive(NAV.x, NAV.y) == 0) {
         camera.position.x = -260;
         camera.position.y = 250;
         camera.position.z = 50;
     }
-    if(NAV.findActive(NAV.x, NAV.y) == 5) {
+    if (NAV.findActive(NAV.x, NAV.y) == 5) {
         camera.position.x = 100;
         camera.position.y = -100;
         camera.position.z = 200;
     }
-    if(NAV.findActive(NAV.x, NAV.y) == 11) {
+    if (NAV.findActive(NAV.x, NAV.y) == 11) {
         camera.position.x = 260;
         camera.position.y = -200;
         camera.position.z = 120;
     }
-    if(NAV.findActive(NAV.x, NAV.y) == 15) {
+    if (NAV.findActive(NAV.x, NAV.y) == 15) {
         camera.position.x = 50;
         camera.position.y = -20;
         camera.position.z = 150;
     }
-    if(NAV.findActive(NAV.x, NAV.y) == 20) {
+    if (NAV.findActive(NAV.x, NAV.y) == 20) {
         camera.position.x = -30;
         camera.position.y = -180;
         camera.position.z = 120;
     }
-    if(NAV.findActive(NAV.x, NAV.y) == 24) {
+    if (NAV.findActive(NAV.x, NAV.y) == 24) {
         camera.position.x = -200;
         camera.position.y = -300;
         camera.position.z = 80;
@@ -615,17 +621,17 @@ function view() {
 
 function reportOnGamepad() {
     var gp = navigator.getGamepads()[0];
-    if(gp.buttons[7].pressed){
-        vehicle.goFront(1200, 1200) ;
+    if (gp.buttons[7].pressed) {
+        vehicle.goFront(1200, 1200);
     }
-    if(gp.buttons[6].pressed){
-        vehicle.brake(1000) ;
+    if (gp.buttons[6].pressed) {
+        vehicle.brake(1000);
     }
     var axeLF = gp.axes[0];
-    if(axeLF < -0.5) {
-        vehicle.turnLeft(10000) ;
-    } else if(axeLF > 0.5) {
-        vehicle.turnRight(10000) ;
+    if (axeLF < -0.5) {
+        vehicle.turnLeft(10000);
+    } else if (axeLF > 0.5) {
+        vehicle.turnRight(10000);
     }
 
 }
@@ -636,28 +642,28 @@ function reportOnGamepad() {
  */
 function start() {
     // Gamepad
-    if(canGame()) {
+    if (canGame()) {
 
         realisateur = window.setInterval(checkRealisation, 100);
 
-        $(window).on("gamepadconnected", function() {
+        $(window).on("gamepadconnected", function () {
             hasGP = true;
             noty({text: 'Gamepad connected !'});
             console.log("connection event");
-            repGP = window.setInterval(reportOnGamepad,100);
+            repGP = window.setInterval(reportOnGamepad, 100);
         });
 
-        $(window).on("gamepaddisconnected", function() {
+        $(window).on("gamepaddisconnected", function () {
             console.log("disconnection event");
             noty({text: prompt});
             window.clearInterval(repGP);
         });
 
         //setup an interval for Chrome
-        var checkGP = window.setInterval(function() {
+        var checkGP = window.setInterval(function () {
             console.log('checkGP');
-            if(navigator.getGamepads()[0]) {
-                if(!hasGP) $(window).trigger("gamepadconnected");
+            if (navigator.getGamepads()[0]) {
+                if (!hasGP) $(window).trigger("gamepadconnected");
                 window.clearInterval(checkGP);
             }
         }, 500);
@@ -686,29 +692,29 @@ function start() {
 function renderRealisation() {
     view();
     camera.lookAt(carPosition.position);
-    switch(mod_realisation){
+    switch (mod_realisation) {
         case 0:
-            RC.renderer.setViewport( 0, 0, 1*canvasWidth, 1*canvasHeight );
+            RC.renderer.setViewport(0, 0, 1 * canvasWidth, 1 * canvasHeight);
             RC.renderer.render(RC.scene, RC.camera);
             break;
         case 1:
-            RC.renderer.setViewport( 0, 0, 1*canvasWidth, 1*canvasHeight );
+            RC.renderer.setViewport(0, 0, 1 * canvasWidth, 1 * canvasHeight);
             RC.renderer.render(RC.scene, camera);
             break;
         case 2:
-            RC.renderer.setViewport( 0, 0, 0.5*canvasWidth, 1*canvasHeight );
+            RC.renderer.setViewport(0, 0, 0.5 * canvasWidth, 1 * canvasHeight);
             // Rendering
             RC.renderer.render(RC.scene, RC.camera);
 
-            RC.renderer.setViewport( 0.5*canvasWidth, 0, 0.5*canvasWidth, 1*canvasHeight );
+            RC.renderer.setViewport(0.5 * canvasWidth, 0, 0.5 * canvasWidth, 1 * canvasHeight);
             RC.renderer.render(RC.scene, camera);
             break;
         case 3:
-            RC.renderer.setViewport( 0, 0, 0.5*canvasWidth, 0.5*canvasHeight );
+            RC.renderer.setViewport(0, 0, 0.5 * canvasWidth, 0.5 * canvasHeight);
             // Rendering
             RC.renderer.render(RC.scene, RC.camera);
 
-            RC.renderer.setViewport( 0.5*canvasWidth, 0.5*canvasHeight, 0.5*canvasWidth, 0.5*canvasHeight );
+            RC.renderer.setViewport(0.5 * canvasWidth, 0.5 * canvasHeight, 0.5 * canvasWidth, 0.5 * canvasHeight);
             RC.renderer.render(RC.scene, camera);
             break;
         default:
