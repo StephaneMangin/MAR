@@ -110,7 +110,7 @@ function ThreeLoadingEnv(){
 //					});
 //				break ;
 //			}
-			noty({text: name+' loaded', timeout: 1});
+			noty({text: name+' loaded'});
 			console.log( 'ThreeLoadingEnv.load:: '+name+':: '+'added !' );
 			// Adds the geometry to the parent node
 			parentNode.add(object.scene) ;
@@ -153,7 +153,7 @@ function ThreeLoadingEnv(){
 				}
 				// add to scene
 				scene.add(o);
-				noty({text: name+' loaded', timeout: 1});
+				noty({text: name+' loaded'});
 				console.log( 'ThreeLoadingEnv.load:: '+name+':: '+'added !' );
 			},
 			function ( xhr ) { // on progress
@@ -170,6 +170,7 @@ function ThreeLoadingEnv(){
 		);
 	}
 	
+	// loadSkyBox
 	// loadSkyBox
 	// inputs
 	//------------------------
@@ -200,7 +201,8 @@ function ThreeLoadingEnv(){
 		);
 		var cube = new THREE.Mesh( new THREE.BoxGeometry( size, size, size), material );
 		cube.name = name;
-		cube.position.z = 500;
-		scene.add( cube );	
+		//cube.position.z = 500;
+		scene.add( cube );
+        noty({text: name+' loaded'});
 	}
 }

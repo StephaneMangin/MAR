@@ -3,7 +3,7 @@
         <title>MAR 2014 - maRace RC&FL</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
+        <script type="text/javascript" src="js/jquery/jquery.min.js"></script>
         <script type="text/javascript" src="js/noty-2.3.8/js/noty/packaged/jquery.noty.packaged.min.js"></script>
         <style> body {
             margin: 0;
@@ -59,6 +59,36 @@
         </style>
     </head>
     <body>
+        <!--script type="application/javascript">
+            $.noty.defaults = {
+                layout: 'left',
+                theme: 'defaultTheme', // or 'relax'
+                type: 'alert',
+                text: '', // can be html or string
+                dismissQueue: true, // If you want to use queue feature set this true
+                template: '<div class="noty_message"><span class="noty_text"></span><div class="noty_close"></div></div>',
+                animation: {
+                    open: {height: 'toggle'}, // or Animate.css class names like: 'animated bounceInLeft'
+                    close: {height: 'toggle'}, // or Animate.css class names like: 'animated bounceOutLeft'
+                    easing: 'swing',
+                    speed: 500 // opening & closing animation speed
+                },
+                timeout: false, // delay for closing event. Set false for sticky notifications
+                force: false, // adds notification to the beginning of queue when set to true
+                modal: false,
+                maxVisible: 5, // you can set max visible notification for dismissQueue true option,
+                killer: false, // for close all notifications before show
+                closeWith: ['click'], // ['click', 'button', 'hover', 'backdrop'] // backdrop click will close all notifications
+                callback: {
+                    onShow: function() {},
+                    afterShow: function() {},
+                    onClose: function() {},
+                    afterClose: function() {},
+                    onCloseClick: function() {},
+                },
+                buttons: false // an array of buttons
+            };
+        </script-->
         <div id="welcomeScreen" class="screen show">
             <h1>Welcome to Super Car</h1>
             <div class="menu">
@@ -74,38 +104,6 @@
             </div>
         </div>
         <div id="timing">00:00:00</div>
-
-        <script type="application/javascript">
-            $.noty.defaults = {
-                layout: 'top',
-                theme: 'relax', // or 'relax'
-                type: 'alert',
-                text: '', // can be html or string
-                dismissQueue: true, // If you want to use queue feature set this true
-                template: '<div class="noty_message"><span class="noty_text"></span><div class="noty_close"></div></div>',
-                animation: {
-                    open: {height: 'rollIn'}, // or Animate.css class names like: 'animated bounceInLeft'
-                    close: {height: 'rollOut'}, // or Animate.css class names like: 'animated bounceOutLeft'
-                    easing: 'swing',
-                    speed: 500 // opening & closing animation speed
-                },
-                timeout: 5, // delay for closing event. Set false for sticky notifications
-                force: false, // adds notification to the beginning of queue when set to true
-                modal: false,
-                maxVisible: 5, // you can set max visible notification for dismissQueue true option,
-                killer: false, // for close all notifications before show
-                closeWith: ['backdrop'], // ['click', 'button', 'hover', 'backdrop'] // backdrop click will close all notifications
-                callback: {
-                    onShow: function() {},
-                    afterShow: function() {},
-                    onClose: function() {},
-                    afterClose: function() {},
-                    onCloseClick: function() {},
-                },
-                buttons: false // an array of buttons
-            };
-        </script>
-
         <script data-main="main.js" src="lib/require.js"></script>
     </body>
 </html>

@@ -28,7 +28,7 @@ requirejs(['ModulesLoaderV2.js'], function () {
 //	----------------------------------------------------------------------------
 //	MAR 2015 - nav test
 //	author(s) : Cozot, R. and Lamarche, F.
-//  sutdient author(s) : Mangin, S.
+//  studient author(s) : Mangin, S.
 //	date : 11/16/2014
 //	last : 21/02/2016
 //	----------------------------------------------------------------------------
@@ -39,7 +39,6 @@ var currentlyPressedKeys = {};
 var playerMode = 1;
 var timerStarted = false;
 var welcomeScreen = true;
-
 
 var canvasWidth = 1366;
 var canvasHeight = 768;
@@ -182,7 +181,6 @@ function restart() {
     delete Loader, scene, RC;
     delete vehicle, carPosition, carRotationZ, car, collidableCar, wireMaterial, carFloorSlope;
     delete weitherEngine, explosionEngine, smokeEngine;
-    toggleWelcomeScreen();
     // Delete the canva added by the renderer
     var canvas = document.getElementsByTagName('canvas')
     for (var i = canvas.length - 1; 0 <= i; i--)
@@ -193,15 +191,6 @@ function restart() {
     initObjects();
     //collidableMeshList = initCollidableBorders(NAV);
     setCamera('follow');
-    // Initializes particules engines wrapper
-
-    weitherEngine = new ParticlesEngineWrapper();
-    fireEngine = new ParticlesEngineWrapper();
-    fireEngine.setType(fireEngine.ParticuleTypes.FIRE);
-    explosionEngine = new ParticlesEngineWrapper();
-    explosionEngine.setType(explosionEngine.ParticuleTypes.EXPLOSION);
-    smokeEngine = new ParticlesEngineWrapper();
-    smokeEngine.setType(smokeEngine.ParticuleTypes.SMOKE);
 }
 
 /**
@@ -209,7 +198,7 @@ function restart() {
  *
  */
 function render() {
-    RC.renderer.autoClear = false;
+    //RC.renderer.autoClear = false;
     requestAnimationFrame(render);
     handleKeys();
     // Vehicle stabilization
@@ -406,7 +395,7 @@ function initGUI() {
         }
     );
 
-    mapControls.add(text, 'Sky', ['Sun', 'Clouds', 'Montains']).onChange(
+    mapControls.add(text, 'Sky', ['Clouds', 'Sun', 'Montains']).onChange(
         function (value) {
             console.log("Weather changed: ", value);
             removeEntity(scene, 'sky');
@@ -533,6 +522,15 @@ function initLand() {
 
     NAV.initActive();
 
+    // Initializes particules engines wrapper
+
+    weitherEngine = new ParticlesEngineWrapper();
+    fireEngine = new ParticlesEngineWrapper();
+    fireEngine.setType(fireEngine.ParticuleTypes.FIRE);
+    explosionEngine = new ParticlesEngineWrapper();
+    explosionEngine.setType(explosionEngine.ParticuleTypes.EXPLOSION);
+    smokeEngine = new ParticlesEngineWrapper();
+    smokeEngine.setType(smokeEngine.ParticuleTypes.SMOKE);
 }
 
 /**
@@ -687,6 +685,7 @@ function start() {
     }
 
     restart();
+    render();
 }
 
 function renderRealisation() {
