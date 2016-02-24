@@ -16,7 +16,7 @@ requirejs(['ModulesLoaderV2.js'], function () {
             "myJS/ThreeLightingEnv.js",
             "myJS/ThreeLoadingEnv.js",
             //"lib/RenderManager.js",
-            "myJS/FallEngine.js",
+            "myJS/ParticlesEngineWrapper.js",
             "myJS/navZ.js",
             "FlyingVehicle.js"]);
         // Loads modules contained in includes and starts main function
@@ -67,9 +67,9 @@ var carMass = 50;
 var cameratype = 'follow';
 // All global function's needed vars
 var Loader, scene, RC = undefined;
-var vehicle, carPosition, carRotationZ, car, MovingCar, wireMaterial, carFloorSlope = undefined;
+var vehicle, carPosition, carRotationZ, car, collidableCar, wireMaterial, carFloorSlope = undefined;
 var weitherEngine, explosionEngine, smokeEngine = undefined;
-var gui= undefined;
+var gui = undefined;
 
 var burned = false;
 var lifePoint = 100.0;
@@ -101,7 +101,7 @@ function initObjects() {
         {
             position: new THREE.Vector3(CARx, CARy, CARz),
             zAngle: CARtheta + Math.PI / 2.0,
-            mass: carMass,
+            mass: carMass
         }
     );
     //	Car
@@ -126,17 +126,19 @@ function initObjects() {
     // simple method to load an object
     car = Loader.load({filename: 'assets/car_Zup_02.obj', node: carRotationZ, name: 'car3'});
     car.position.z = +0.25;
+
+    // Define colidable car
     var carGeometry = new THREE.SphereGeometry(5);
     wireMaterial = new THREE.MeshBasicMaterial({
         color: 0xff0000,
         wireframe: true,
         visible: false,
     });
-    MovingCar = new THREE.Mesh(carGeometry, wireMaterial);
-    scene.add(MovingCar);
-    MovingCar.position.x = CARx;
-    MovingCar.position.y = CARy;
-    MovingCar.position.z = CARz;
+    collidableCar = new THREE.Mesh(carGeometry, wireMaterial);
+    scene.add(collidableCar);
+    collidableCar.position.x = CARx;
+    collidableCar.position.y = CARy;
+    collidableCar.position.z = CARz;
 
 
 }
@@ -177,6 +179,9 @@ function onWindowResize() {
  *
  */
 function restart() {
+    delete Loader, scene, RC;
+    delete vehicle, carPosition, carRotationZ, car, collidableCar, wireMaterial, carFloorSlope;
+    delete weitherEngine, explosionEngine, smokeEngine;
     toggleWelcomeScreen();
     // Delete the canva added by the renderer
     var canvas = document.getElementsByTagName('canvas')
@@ -190,16 +195,13 @@ function restart() {
     setCamera('follow');
     // Initializes particules engines wrapper
 
-    weitherEngine = new FallEngine();
-    fireEngine = new FallEngine();
-    fireEngine.setParticle(fireEngine.types.fire);
-    explosionEngine = new FallEngine();
-    explosionEngine.setParticle(explosionEngine.types.explosion);
-    smokeEngine = new FallEngine();
-    smokeEngine.setParticle(smokeEngine.types.smoke);
-
-    // Finaly render the scene
-    render();
+    weitherEngine = new ParticlesEngineWrapper();
+    fireEngine = new ParticlesEngineWrapper();
+    fireEngine.setType(fireEngine.ParticuleTypes.FIRE);
+    explosionEngine = new ParticlesEngineWrapper();
+    explosionEngine.setType(explosionEngine.ParticuleTypes.EXPLOSION);
+    smokeEngine = new ParticlesEngineWrapper();
+    smokeEngine.setType(smokeEngine.ParticuleTypes.SMOKE);
 }
 
 /**
@@ -223,14 +225,14 @@ function render() {
         var newPosition = vehicle.position.clone();
         newPosition.sub(oldPosition);
         // Collision detection
-        var originPoint = MovingCar.position.clone();
         // TODO: collisionneur difficile à metre en place :-(
         // TODO: il faut entourer chaque zone de collision d'une box de detection respectant ainsi le schema du circuit
-        //for (var vertexIndex = 0; vertexIndex < MovingCar.geometry.vertices.length; vertexIndex++)
+        //var originPoint = collidableCar.position.clone();
+        //for (var vertexIndex = 0; vertexIndex < collidableCar.geometry.vertices.length; vertexIndex++)
         //{
-        //    var localVertex = MovingCar.geometry.vertices[vertexIndex].clone();
-        //    var globalVertex = localVertex.applyMatrix4( MovingCar.matrix );
-        //    var directionVector = globalVertex.sub( MovingCar.position );
+        //    var localVertex = collidableCar.geometry.vertices[vertexIndex].clone();
+        //    var globalVertex = localVertex.applyMatrix4( collidableCar.matrix );
+        //    var directionVector = globalVertex.sub( collidableCar.position );
         //
         //    var ray = new THREE.Raycaster( originPoint, directionVector.clone().normalize() );
         //    var collisionResults = ray.intersectObjects( collidableMeshList );
@@ -278,6 +280,15 @@ function render() {
                 burned = true;
         } else {
             // Updates the vehicles
+        //if (burned || lifePoint <= 0) {
+        //       fireEngine.start(collidableCar);
+        //        console.log("BURNED !!!!!!!!!!!!")
+        //        burned = true;
+        //} else {
+            // car0
+            carPosition.position.set(NAV.x, NAV.y, NAV.z);
+            collidableCar.position.set(NAV.x, NAV.y, NAV.z);
+            // Updates the vehicle
             vehicle.position.x = NAV.x;
             vehicle.position.y = NAV.y;
             if (newPosition.z < NAV.z) {
@@ -295,13 +306,17 @@ function render() {
             if (cameratype == 'up') {
                 RC.camera.position.z = 50 + vehicle.speed.length();
             }
-        }
+        //}
 
     }
     updateTiming();
+    // Update all of the particles engines wrappers (check is done if started or not)
+    explosionEngine.update(dt, vehicle.speed);
+    fireEngine.update(dt,  vehicle.speed);
+    smokeEngine.update(dt,  vehicle.speed);
+    weitherEngine.update(dt, null);
     // Rendering
     RC.renderer.render(RC.scene, RC.camera);
-    weitherEngine.update(dt, vehicle.position.multiplyScalar(10));
 
 };
 
@@ -317,9 +332,11 @@ function initGUI() {
         this.Trees = false;
         this.CameraUp = false;
         this.Debug = false;
-        this.Particules = [];
+        this.Environnement = ['Cloud', 'Montains'];
+        this.Weather = ['NONE', 'RAIN', 'SNOW'];
         this.Reset = function () {
             restart();
+            render();
         };
     };
 
@@ -334,11 +351,15 @@ function initGUI() {
         function (value) {
             console.log("Camera up: ", value);
             wireMaterial.visible = value;
-            for (border in collidableMeshList) {
-                border.color = 0x8888ff;
-                border.wireframe = true;
-                border.visible = value;
-            }
+            collidableMeshList.forEach(function(border) {
+                if (border.hasOwnProperty('material')) {
+                    border.material.color = 0x8888ff;
+                    border.material.wireframe = true;
+                    border.material.visible = value;
+                } else {
+                    console.error("You can add a non material mesh to collidable elements !")
+                }
+            });
         }
     );
     gameControls.add(text, 'CameraUp').onChange(
@@ -355,11 +376,11 @@ function initGUI() {
     vehicleControls.add(text, 'Mass', 0, 500).onChange(function (value) {
         console.log("Mass changed: ", value);
         vehicle.mass = value
-    })
+    });
     vehicleControls.add(text, 'Inertia', 0, 5).onChange(function (value) {
-        console.log("Speed changed: ", value);
+        console.log("Inertia changed: ", value);
         dt = value / 100;
-    })
+    });
 
     var mapControls = gui.addFolder('Map controls');
     mapControls.add(text, 'Trees').onChange(
@@ -371,19 +392,33 @@ function initGUI() {
                 removeEntity(RC.scene, 'trees');
             }
         }
-    )
-    mapControls.add(text, 'Particules', ['none', 'rain', 'snow']).onChange(
+    );
+    mapControls.add(text, 'Weather', ['NONE', 'RAIN', 'SNOW']).onChange(
         function (value) {
-            console.log("Particules changed: ", value);
-            if (value != 'none') {
+            console.log("Weather changed: ", value);
+            if (value != 'NONE') {
                 weitherEngine.stop();
-                weitherEngine.setParticle(weitherEngine.types[value]);
+                weitherEngine.setType(weitherEngine.ParticuleTypes[value]);
                 weitherEngine.start(scene);
             } else {
                 weitherEngine.stop();
             }
         }
-    )
+    );
+
+    mapControls.add(text, 'Environnement', ['Clouds', 'Montains']).onChange(
+        function (value) {
+            console.log("Weather changed: ", value);
+            removeEntity(scene, 'sky');
+            if (value == 'Clouds') {
+                Loader.loadSkyBox('assets/maps/sky', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'jpg', RC.scene, 'sky', 4000);
+            } else if (value == 'Montains') {
+                Loader.loadSkyBox('assets/maps/mountain', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'png', RC.scene, 'sky', 4000);
+            } else {
+                Loader.loadSkyBox('assets/maps/sky', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'jpg', RC.scene, 'sky', 4000);
+            }
+        }
+    );
 }
 //	callback functions
 //	---------------------------------------------------------------------------
@@ -454,7 +489,7 @@ function initLand() {
     Loader.loadMesh('assets', 'arrivee_Zup_01', 'obj', RC.scene, 'decors', -340, -340, 0, 'front');
 
     //	Skybox
-    Loader.loadSkyBox('assets/maps', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'jpg', RC.scene, 'sky', 4000);
+    Loader.loadSkyBox('assets/maps/sky', ['px', 'nx', 'py', 'ny', 'pz', 'nz'], 'jpg', RC.scene, 'sky', 4000);
 
     //	Planes Set for Navigation
     // 	z up
@@ -644,6 +679,7 @@ function start() {
     if (gui == undefined) {
         initGUI();
     }
+
     restart();
 }
 
