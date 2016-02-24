@@ -12,5 +12,5 @@ newmtl grass
 	Kd 0.5020 0.5020 0.5020
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
-	map_Ka maps/grass2.jpg
-	map_Kd maps/grass2.jpg
+	map_Ka maps/grass.jpg
+	map_Kd maps/grass.jpg
